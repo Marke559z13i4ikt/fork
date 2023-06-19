@@ -31,9 +31,9 @@ function Tree(props: IProps) {
   const [searchedTreeData, setSearchedTreeData] = useState<ITreeNode[] | null>(null);
 
 
-  useEffect(()=>{
+  useEffect(() => {
     setTreeData(initialData);
-  },[initialData])
+  }, [initialData])
 
   function filtrationDataTree(keywords: string) {
     if (!keywords) {
@@ -73,24 +73,27 @@ function TreeNode(props: TreeNodeIProps) {
 
   function loadData(data: ITreeNode) {
     const treeNodeConfig: ITreeConfigItem = treeConfig[data.treeNodeType];
-    treeNodeConfig.getChildren?.(data).then(res => {
+    treeNodeConfig.getChildren?.({
+      ...data,
+      ...(data.getChildrenParams || {})
+    }).then(res => {
       if (res.length) {
         setTimeout(() => {
           data.children = res;
           setShowChildren(true);
           setIsLoading(false);
         }, 200);
-      } 
-      // else {
-      //   if (treeNodeConfig.next) {
-      //     data.pretendNodeType = treeNodeConfig.next;
-      //     loadData(data);
-      //   } else {
-      //     data.children = [];
-      //     setShowChildren(true);
-      //     setIsLoading(false);
-      //   }
-      // }
+      }
+      else {
+        // if (treeNodeConfig.next) {
+        //   data.pretendNodeType = treeNodeConfig.next;
+        //   loadData(data);
+        // } else {
+        data.children = [];
+        setShowChildren(true);
+        setIsLoading(false);
+        // }
+      }
     }).catch(error => {
       setIsLoading(false);
     });
@@ -132,11 +135,11 @@ function TreeNode(props: TreeNodeIProps) {
     />
   }
 
-  const recognizeIcon = (nodeType: TreeNodeType) => {
-    if (nodeType === TreeNodeType.DATA_SOURCE) {
-      return databaseMap[data.databaseType]?.icon
+  const recognizeIcon = (treeNodeType: TreeNodeType) => {
+    if (treeNodeType === TreeNodeType.DATA_SOURCE) {
+      return databaseMap[data.databaseType!]?.icon
     } else {
-      return switchIcon[nodeType]?.icon || '\ue62c'
+      return switchIcon[treeNodeType]?.[showChildren ? 'unfoldIcon' : 'icon'] || '\ue62c'
     }
   }
 
