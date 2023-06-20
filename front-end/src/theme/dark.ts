@@ -4,24 +4,24 @@ import {commonToken} from './common';
 
 type IAntdPrimaryColor = {
   [key in PrimaryColorType]: any;
-}
+};
 
 // 主题色
 const antdPrimaryColor: IAntdPrimaryColor = {
   [PrimaryColorType.Polar_Green]: {
-    "colorPrimary": "#3c8618",
+    colorPrimary: '#3c8618',
   },
   [PrimaryColorType.Golden_Purple]: {
-    "colorPrimary": "#51258f",
+    colorPrimary: '#51258f',
   },
   [PrimaryColorType.Polar_Blue]: {
-    "colorPrimary": "#1677ff",
-  }
-}
+    colorPrimary: '#1677ff',
+  },
+};
 
 const antDarkTheme = {
   algorithm: [theme.darkAlgorithm, theme.compactAlgorithm],
-  customName:  "dark",
+  customName: 'dark',
   antdPrimaryColor,
   token: {
     ...commonToken,
@@ -32,5 +32,4 @@ const antDarkTheme = {
   }
 }
 
-export default antDarkTheme
-  
+export default antDarkTheme;
