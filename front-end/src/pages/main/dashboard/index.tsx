@@ -1,14 +1,16 @@
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect, Dispatch } from 'umi';
-import styles from './index.less';
-import classnames from 'classnames';
-import { IChatData, IChatDataItem, IChatDataSortItem } from '@/typings/dashboard';
+import cs from 'classnames';
+import { IChartType, IDashboardItem, IChartDataItem, IChartDataSortItem } from '@/typings/dashboard';
 import DraggableContainer from '@/components/DraggableContainer';
 import Iconfont from '@/components/Iconfont';
 import ChartItem from './chart-item';
-import { Button } from 'antd';
+import { Button, Form, Input, Modal } from 'antd';
 import { ReactSortable, Store } from 'react-sortablejs';
 import { GlobalState } from '@/models/global';
+import { createDashboard, getDashboardList, updateDashboard } from '@/service/dashboard';
+import { EditOutlined } from '@ant-design/icons';
+import styles from './index.less';
 
 interface IProps {
   className?: string;
@@ -16,40 +18,44 @@ interface IProps {
   dispatch: Dispatch;
 }
 
-const initChartItemData: IChatDataItem = {
+const initChartItemData: IChartDataItem = {
   sqlContext: 'sqlContext',
   sqlData: 'aa',
-  chatType: 'Line',
+  chatType: IChartType.Line,
   chatParam: {
     x: '',
     y: '',
   },
 };
 
-const initDataList: IChatData[] = [
-  {
-    name: 'Demo',
-    data: [[initChartItemData]],
-  },
-];
-
 function Chart(props: IProps) {
   const { className } = props;
 
-  const [dataList, setDataList] = useState(initDataList);
-  const [curItem, setCurItem] = useState<IChatData>(dataList[0]);
+  const [dataList, setDataList] = useState<IDashboardItem[]>([]);
+  const [curItem, setCurItem] = useState<IDashboardItem>();
+  const [openAddDashboard, setOpenAddDashboard] = useState(false);
+  const [form] = Form.useForm(); // 创建一个表单实例
 
   useEffect(() => {
-    // TODO: 获取列表数据
-    //
+    // 获取列表数据
+    queryDashboardList();
     console.log('chart', props);
   }, []);
+
+  const queryDashboardList = async () => {
+    let res = await getDashboardList({});
+    const { data } = res;
+    if (Array.isArray(data) && data.length > 0) {
+      setDataList(data);
+      setCurItem(data[0]);
+    }
+  };
 
   const renderContent = () => {
     const { data, name } = curItem || {};
     if (!data) return;
 
-    const sortData = (data || []).reduce((acc: IChatDataSortItem[], cur, i) => {
+    const sortData = (data || []).reduce((acc: IChartDataSortItem[], cur, i) => {
       const tmp = (cur || []).map((c, ii) => ({ id: `${i}_${ii}`, ...c }));
       acc.push(...tmp);
       return acc;
@@ -58,12 +64,12 @@ function Chart(props: IProps) {
     console.log(sortData, 'sortData');
     return (
       <>
-        <div className={styles.box_right_title}>
+        <div className={styles.boxRightTitle}>
           <Iconfont code="&#xe60d;" />
           <div style={{ marginLeft: '8px' }}>{name}</div>
         </div>
 
-        <div className={styles.box_right_content}>
+        <div className={styles.BoxRightContent}>
           {/* <ReactSortable
             list={sortData}
             setList={(newState: IChatDataSortItem[], sortable: any, store: Store) => {
@@ -72,9 +78,9 @@ function Chart(props: IProps) {
             onAdd={() => {}}
           > */}
           {data.map((rowData, rowIndex) => (
-            <div key={rowIndex} className={styles.box_right_content_row}>
+            <div key={rowIndex} className={styles.boxRightContentRow}>
               {rowData.map((item, colIndex) => (
-                <div className={styles.box_right_content_column} style={{ width: `${100 / rowData.length}%` }}>
+                <div className={styles.boxRightContentColumn} style={{ width: `${100 / rowData.length}%` }}>
                   <ChartItem
                     id={`${rowIndex}_${colIndex}`}
                     index={colIndex}
@@ -119,15 +125,35 @@ function Chart(props: IProps) {
   };
 
   return (
-    <DraggableContainer layout="row" className={classnames(styles.box, className)}>
-      <div className={styles.box_left}>
-        <div className={styles.box_left_title}>Dashboard</div>
-        {(dataList || []).map((i, index) => (
-          <div key={index} className={styles.box_left_item} onClick={() => setCurItem(i)}>
-            <div>{i.name}</div>
-          </div>
-        ))}
-        {/* 
+    <>
+      <DraggableContainer layout="row" className={cs(styles.box, className)}>
+        <div className={styles.boxLeft}>
+          <div className={styles.boxLeftTitle}>Dashboard</div>
+          <Button className={styles.createDashboardBtn} type="primary" onClick={() => setOpenAddDashboard(true)}>
+            Create Dashboard
+          </Button>
+          {(dataList || []).map((i, index) => (
+            <div
+              key={index}
+              className={cs({ [styles.boxLeftItem]: true, [styles.activeItem]: curItem?.id === i.id })}
+              onClick={() => setCurItem(i)}
+            >
+              <div>{i.name}</div>
+              <EditOutlined
+                className={styles.boxLeftItemIcon}
+                onClick={() => {
+                  const { id, name, description } = i;
+                  setOpenAddDashboard(true);
+                  form.setFieldsValue({
+                    id,
+                    name,
+                    description,
+                  });
+                }}
+              />
+            </div>
+          ))}
+          {/* 
         <Button
           onClick={() => {
             props.dispatch({
@@ -141,9 +167,54 @@ function Chart(props: IProps) {
         >
           测试dva
         </Button> */}
-      </div>
-      <div className={styles.box_right}>{renderContent()}</div>
-    </DraggableContainer>
+        </div>
+        <div className={styles.box_right}>{renderContent()}</div>
+      </DraggableContainer>
+
+      <Modal
+        title={form.getFieldValue('id') ? 'Edit Dashboard' : 'Add Dashboard'}
+        open={openAddDashboard}
+        onOk={async () => {
+          try {
+            const values = await form.validateFields();
+            console.log('Success:', values);
+            const formValue = form.getFieldsValue(true);
+            const { id } = formValue;
+
+            if (id) {
+              await updateDashboard(formValue);
+            } else {
+              await createDashboard(formValue);
+            }
+            queryDashboardList();
+            setOpenAddDashboard(false);
+            form.setFieldsValue({});
+          } catch (errorInfo) {
+            console.log('Failed:', errorInfo);
+          }
+        }}
+        onCancel={() => {
+          setOpenAddDashboard(false);
+          form.setFieldsValue({});
+        }}
+        okText="Confirm"
+        cancelText="Cancel"
+      >
+        <Form form={form} autoComplete={'off'}>
+          <Form.Item label={'name'} name={'name'} rules={[{ required: true, message: 'Please input your name' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label={'description'} name={'description'}>
+            <Input.TextArea />
+          </Form.Item>
+          {/* <Form.Item>
+            <Button type="primary" onClick={onCheck}>
+              Check
+            </Button>
+          </Form.Item> */}
+        </Form>
+      </Modal>
+    </>
   );
 }
 

@@ -4,7 +4,11 @@ import ReactEcharts from 'echarts-for-react';
 import './index.less';
 type EChartsOption = charts.EChartsOption;
 
-const LineChart = (props, ref) => {
+interface IProps {
+  yAxis?: '',
+}
+
+const LineChart = (props: IProps, ref) => {
   const lineRef = useRef<any>(null);
   const getOption = () => {
     const option: EChartsOption = {
@@ -21,8 +25,8 @@ const LineChart = (props, ref) => {
           type: 'line',
         },
       ],
-      legend: {
-        show: true,
+      tooltip: {
+        trigger: 'axis',
       },
     };
     return option;

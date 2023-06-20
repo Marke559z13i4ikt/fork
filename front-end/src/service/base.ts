@@ -45,8 +45,9 @@ const desktopServiceUrl = `http://127.0.0.1:${process.env.APP_PORT || '10824'}`;
 const prodServiceUrl = location.origin;
 
 // 是否自定义了 _BaseURL || 是否为桌面端地址
-const baseURL = localStorage.getItem('_BaseURL')
-  || (location.href.indexOf('dist/index.html') > -1 ? desktopServiceUrl : prodServiceUrl);
+const baseURL =
+  localStorage.getItem('_BaseURL') ||
+  (location.href.indexOf('dist/index.html') > -1 ? desktopServiceUrl : prodServiceUrl);
 
 window._BaseURL = baseURL;
 
@@ -69,15 +70,15 @@ const request = extend({
   },
 });
 
-request.interceptors.request.use((url, options) => {  
-  const myOptions:any = {
+request.interceptors.request.use((url, options) => {
+  const myOptions: any = {
     ...options,
     headers: {
       ...options.headers,
-    }
-  }
+    },
+  };
   if (localStorage.getItem('DBHUB')) {
-    myOptions.headers.DBHUB = localStorage.getItem('DBHUB')
+    myOptions.headers.DBHUB = localStorage.getItem('DBHUB');
   }
   return {
     options: myOptions,
@@ -87,27 +88,23 @@ request.interceptors.request.use((url, options) => {
 request.interceptors.response.use(async (response, options) => {
   const res = await response.clone().json();
   if (window._ENV === 'desktop') {
-    const DBHUB = response.headers.get('DBHUB') || ''
+    const DBHUB = response.headers.get('DBHUB') || '';
     if (DBHUB) {
-      localStorage.setItem('DBHUB', DBHUB)
+      localStorage.setItem('DBHUB', DBHUB);
     }
   }
   const { errorCode, codeMessage } = res;
   if (errorCode === ErrorCode.NEED_LOGGED_IN) {
     // window.location.href = '#/login?callback=' + window.location.hash.substr(1);
     const callback = window.location.hash.substr(1).split('?')[0];
-    window.location.href =
-      '#/login?' + (callback === '/login' ? '' : `callback=${callback}`);
+    window.location.href = '#/login?' + (callback === '/login' ? '' : `callback=${callback}`);
   }
 
   return response;
 });
 
-export default function createRequest<P = void, R = {}>(
-  url: string,
-  options: IOptions,
-) {
-  const { method = 'get', mock = false, errorLevel = 'toast', delayTime } = options;
+export default function createRequest<P = void, R = {}>(url: string, options?: IOptions) {
+  const { method = 'get', mock = false, errorLevel = 'toast', delayTime } = options || {};
 
   // 是否需要mock
   const _baseURL = mock ? mockUrl : baseURL;
@@ -143,32 +140,29 @@ export default function createRequest<P = void, R = {}>(
           break;
       }
 
-      request[method](`${_baseURL}${_url}`, { [dataName]: params }).then((res) => {
-        if (!res) return;
-        const { success, errorCode, errorMessage, data } = res;
-        if (
-          !success &&
-          errorLevel === 'toast' &&
-          !noNeedToastErrorCode.includes(errorCode)
-        ) {
+      request[method](`${_baseURL}${_url}`, { [dataName]: params })
+        .then((res) => {
+          if (!res) return;
+          const { success, errorCode, errorMessage, data } = res;
+          if (!success && errorLevel === 'toast' && !noNeedToastErrorCode.includes(errorCode)) {
+            delayTimeFn(() => {
+              message.error(`${errorCode}: ${errorMessage}`);
+              reject(`${errorCode}: ${errorMessage}`);
+            }, delayTime);
+            return;
+          }
+          // 有些loading效果添加强制延时效果可能会更好看, 可行性待商榷
           delayTimeFn(() => {
-            message.error(`${errorCode}: ${errorMessage}`);
-            reject(`${errorCode}: ${errorMessage}`);
-          }, delayTime)
-          return
-        }
-        // 有些loading效果添加强制延时效果可能会更好看, 可行性待商榷
-        delayTimeFn(() => {
-          resolve(data);
-        }, delayTime)
-      })
-      .catch((error) => {
-        console.log('catch error', error);
-        delayTimeFn(() => {
-          errorHandler(error, errorLevel);
-          reject(error);
-        }, delayTime)
-      });
+            resolve(data);
+          }, delayTime);
+        })
+        .catch((error) => {
+          console.log('catch error', error);
+          delayTimeFn(() => {
+            errorHandler(error, errorLevel);
+            reject(error);
+          }, delayTime);
+        });
     });
   };
 }

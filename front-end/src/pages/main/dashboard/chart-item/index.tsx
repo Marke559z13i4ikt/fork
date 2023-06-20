@@ -1,4 +1,4 @@
-import { IChatData, IChatDataItem } from '@/typings/dashboard';
+import { IChartData, IChartDataItem, IChartType } from '@/typings/dashboard';
 import React, { useRef, useState } from 'react';
 import styles from './index.less';
 import addImage from '@/assets/img/add.svg';
@@ -12,7 +12,7 @@ import { Dropdown, MenuProps } from 'antd';
 interface IChartItemProps {
   id: string;
   index: number;
-  data: IChatDataItem;
+  data: IChartDataItem;
   connections: Array<any>;
   canAddRowItem: boolean;
 
@@ -23,46 +23,15 @@ interface IChartItemProps {
   addChartRight?: () => void;
 }
 
-enum IChatType {
-  'Pie' = 'Pie',
-  'Column' = 'Column',
-  'Line' = 'Line',
-}
-
-const defaultData: IChatDataItem = {
+const defaultData: IChartDataItem = {
   sqlContext: '',
   sqlData: '',
-  chatType: 'Line',
-  chatParam: {},
+  chartType: IChartType.Line,
+  chartParam: {},
 };
-const items: MenuProps['items'] = [
-  {
-    key: '1',
-    label: (
-      <a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
-        1st menu item
-      </a>
-    ),
-  },
-  {
-    key: '2',
-    label: (
-      <a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
-        2nd menu item
-      </a>
-    ),
-  },
-  {
-    key: '3',
-    label: (
-      <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
-        3rd menu item
-      </a>
-    ),
-  },
-];
+
 function ChartItem(props: IChartItemProps) {
-  const [data, setData] = useState<IChatDataItem>(defaultData);
+  const [data, setData] = useState<IChartDataItem>(defaultData);
   const [isEditing, setIsEditing] = useState();
   const chartRef = useRef<any>();
 
@@ -104,12 +73,64 @@ function ChartItem(props: IChartItemProps) {
     );
   };
 
+  const renderChart = () => {
+    const { chartType } = data;
+    switch (chartType) {
+      case IChartType.Pie:
+        return (
+          <Pie
+            ref={chartRef}
+            data={[
+              {
+                value: 6,
+                name: '男',
+              },
+              {
+                value: 4,
+                name: '女',
+              },
+            ]}
+          />
+        );
+      case IChartType.Line:
+        return <Line ref={chartRef} />;
+      case IChartType.Column:
+        return <Bar ref={chartRef} />;
+      default:
+        return null;
+    }
+  };
+
+  const export2Image = () => {
+    const echartInstance = chartRef.current.getEchartsInstance();
+    let img = new Image();
+    img.src = echartInstance.getDataURL({
+      type: 'png',
+      devicePixelRatio: 4,
+      backgroundColor: '#FFF',
+    });
+    img.onload = function () {
+      let canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      let ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0);
+      let dataURL = canvas.toDataURL('image/png');
+
+      var a = document.createElement('a');
+      let event = new MouseEvent('click');
+      a.download = 'image.png';
+      a.href = dataURL;
+      a.dispatchEvent(event);
+    };
+  };
+
   return (
     <div className={styles.container}>
       {renderLeftAndRightPlusIcon()}
       {renderTopAndBottomPlusIcon()}
       <div className={styles.title_bar}>
-        <div className={styles.title}>{IChatType[data?.chatType]}</div>
+        <div className={styles.title}>{IChartType[data?.chartType]}</div>
 
         <Dropdown
           menu={{
@@ -117,30 +138,7 @@ function ChartItem(props: IChartItemProps) {
               {
                 key: '1',
                 label: 'Export to image',
-                onClick: () => {
-                  console.log('chartRef.current', chartRef);
-                  const echartInstance = chartRef.current.getEchartsInstance();
-                  let img = new Image();
-                  img.src = echartInstance.getDataURL({
-                    type: 'png',
-                    devicePixelRatio: 4,
-                    backgroundColor: '#FFF',
-                  });
-                  img.onload = function () {
-                    let canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    let ctx = canvas.getContext('2d');
-                    ctx?.drawImage(img, 0, 0);
-                    let dataURL = canvas.toDataURL('image/png');
-
-                    var a = document.createElement('a');
-                    let event = new MouseEvent('click');
-                    a.download = 'image.png';
-                    a.href = dataURL;
-                    a.dispatchEvent(event);
-                  };
-                },
+                onClick: export2Image,
               },
             ],
           }}
@@ -150,18 +148,7 @@ function ChartItem(props: IChartItemProps) {
         </Dropdown>
       </div>
 
-      <div>
-        {
-          // test
-          props.index === 0 ? (
-            <Pie ref={chartRef} />
-          ) : props.index === 1 ? (
-            <Line ref={chartRef} />
-          ) : (
-            <Bar ref={chartRef} />
-          )
-        }
-      </div>
+      <div>{renderChart()}</div>
 
       <div>数据区块{props.id}</div>
 
