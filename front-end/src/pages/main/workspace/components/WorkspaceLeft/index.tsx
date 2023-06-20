@@ -169,6 +169,7 @@ function RenderTableBox() {
       dataSourceId: currentDatabase.dataSourceId,
       databaseName: currentDatabase.databaseName,
       schemaName: currentDatabase.schemaName,
+      databaseType: currentDatabase.databaseType,
       pageNo: 1,
       pageSize: 999,
     }).then(res => {

@@ -73,6 +73,11 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
               key: t.id!,
               name: t.alias,
               treeNodeType: TreeNodeType.DATA_SOURCE,
+              parentParams: {
+                dataSourceId: t.id,
+                dataSourceName: t.alias,
+                databaseType: t.type
+              }
             }
           })
           r(data);
@@ -91,6 +96,9 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
               key: t.name,
               name: t.name,
               treeNodeType: TreeNodeType.DATABASE,
+              parentParams: {
+                ...t.parentParams
+              }
             }
           })
           r(data);
@@ -168,7 +176,8 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
               name: item.name,
               treeNodeType: TreeNodeType.TABLE,
               key: item.name,
-              getChildrenParams: {
+              parentParams: {
+                databaseType: params.databaseType,
                 dataSourceId: params.dataSourceId,
                 databaseName: params.databaseName,
                 schemaName: params.schemaName,
@@ -195,19 +204,19 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
             name: 'columns',
             treeNodeType: TreeNodeType.COLUMNS,
             key: 'columns',
-            getChildrenParams: params.getChildrenParams
+            parentParams: params.parentParams
           },
           {
             name: 'keys',
             treeNodeType: TreeNodeType.KEYS,
             key: 'keys',
-            getChildrenParams: params.getChildrenParams
+            parentParams: params.parentParams
           },
           {
             name: 'indexs',
             treeNodeType: TreeNodeType.INDEXES,
             key: 'indexs',
-            getChildrenParams: params.getChildrenParams
+            parentParams: params.parentParams
           },
         ]
 
