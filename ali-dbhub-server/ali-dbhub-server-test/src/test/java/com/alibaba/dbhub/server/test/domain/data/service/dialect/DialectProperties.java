@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.alibaba.dbhub.server.domain.support.enums.DbTypeEnum;
 
+
 /**
  * 方言配置
  *
