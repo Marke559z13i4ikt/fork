@@ -11,7 +11,6 @@ import { Button, Tabs } from 'antd';
 import { useReducerContext } from '@/pages/main/workspace';
 import { workspaceActionType } from '@/pages/main/workspace/context';
 
-
 interface IProps {
   className?: string;
 }
@@ -22,7 +21,7 @@ export default memo<IProps>(function WorkspaceRight(props) {
   const [consoleList, setConsoleList] = useState<IConsole[]>();
   const [activeConsoleId, setActiveConsoleId] = useState<number>();
   const { state, dispatch } = useReducerContext();
-  const { dblclickTreeNodeData } = state;
+  const { dblclickTreeNodeData, currentWorkspaceData } = state;
   const [consoleValue, setConsoleValue] = useState<string>();
 
   useEffect(() => {
@@ -139,8 +138,7 @@ export default memo<IProps>(function WorkspaceRight(props) {
   }
 
   function onChange(key: string) {
-    const index = consoleList?.findIndex(t => t.id === +key)
-    setActiveConsoleId(index!)
+    setActiveConsoleId(+key)
   }
 
   const onEdit = (targetKey: any, action: 'add' | 'remove') => {
@@ -205,7 +203,21 @@ export default memo<IProps>(function WorkspaceRight(props) {
         return <div className={classnames(styles.console_box, { [styles.active_console_box]: activeConsoleId === t.id })}>
           <DraggableContainer layout="column" className={styles.box_right_center}>
             <div ref={draggableRef} className={styles.box_right_console}>
-              <Console hasAiChat={true} hasAi2Lang={true} value={consoleValue} />
+              <Console
+                executeParams={
+                  {
+                    databaseName: currentWorkspaceData.databaseName,
+                    dataSourceId: currentWorkspaceData.dataSourceId,
+                    type: currentWorkspaceData.databaseType,
+                    schemaName: currentWorkspaceData?.schemaName,
+                    consoleId: t.id,
+                    consoleName: t.name,
+                  }
+                }
+                hasAiChat={true}
+                hasAi2Lang={true}
+                value={consoleValue}
+              />
             </div>
             <div className={styles.box_right_result}>
               <p>{t.databaseName}</p>
