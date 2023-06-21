@@ -72,6 +72,11 @@ public class DashboardServiceImpl implements DashboardService {
             return DataResult.empty();
         }
         Dashboard dashboard = dashboardConverter.do2model(dashboardDO);
+        LambdaQueryWrapper<DashboardChartRelationDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(DashboardChartRelationDO::getDashboardId, id);
+        List<DashboardChartRelationDO> relationDO = dashboardChartRelationMapper.selectList(queryWrapper);
+        List<Long> chartIds = relationDO.stream().map(DashboardChartRelationDO::getChartId).toList();
+        dashboard.setChartIds(chartIds);
         return DataResult.of(dashboard);
     }
 
