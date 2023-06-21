@@ -6,7 +6,7 @@ import mysqlServer, { ISchemaParams, IGetListParams, ITableParams } from '@/serv
 
 export type ITreeConfig = Partial<{ [key in TreeNodeType]: ITreeConfigItem }>;
 
-export const switchIcon: Partial<{ [key in TreeNodeType]: { icon: string, unfoldIcon?:string } }> = {
+export const switchIcon: Partial<{ [key in TreeNodeType]: { icon: string, unfoldIcon?: string } }> = {
   [TreeNodeType.DATABASE]: {
     icon: '\ue62c',
   },
@@ -73,10 +73,10 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
               key: t.id!,
               name: t.alias,
               treeNodeType: TreeNodeType.DATA_SOURCE,
-              parentParams: {
+              extraParams: {
+                databaseType: t.type,
                 dataSourceId: t.id,
-                dataSourceName: t.alias,
-                databaseType: t.type
+                dataSourceName: t.name,
               }
             }
           })
@@ -88,7 +88,7 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
     },
   },
   [TreeNodeType.DATA_SOURCE]: {
-    getChildren: (params: { id: number }) => {
+    getChildren: (params) => {
       return new Promise((r: (value: ITreeNode[]) => void, j) => {
         connectionService.getDBList(params).then(res => {
           const data: ITreeNode[] = res.map(t => {
@@ -96,8 +96,9 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
               key: t.name,
               name: t.name,
               treeNodeType: TreeNodeType.DATABASE,
-              parentParams: {
-                ...t.parentParams
+              extraParams: {
+                ...params.extraParams,
+                databaseName: t.name
               }
             }
           })
@@ -167,21 +168,17 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
   },
   [TreeNodeType.TABLES]: {
     icon: '\ueac5',
-    getChildren: (params: IGetListParams) => {
+    getChildren: (params) => {
       return new Promise((r: (value: ITreeNode[]) => void, j) => {
-
         mysqlServer.getList(params).then(res => {
-          const tableList: ITreeNode[] = res.data?.map((item: any) => {
+          const tableList: ITreeNode[] = res.data?.map((t: any) => {
             return {
-              name: item.name,
+              name: t.name,
               treeNodeType: TreeNodeType.TABLE,
-              key: item.name,
-              parentParams: {
-                databaseType: params.databaseType,
-                dataSourceId: params.dataSourceId,
-                databaseName: params.databaseName,
-                schemaName: params.schemaName,
-                tableName: item.name,
+              key: t.name,
+              extraParams: {
+                ...params.extraParams,
+                tableName: t.name
               }
             }
           })
@@ -204,19 +201,19 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
             name: 'columns',
             treeNodeType: TreeNodeType.COLUMNS,
             key: 'columns',
-            parentParams: params.parentParams
+            extraParams: params.extraParams
           },
           {
             name: 'keys',
             treeNodeType: TreeNodeType.KEYS,
             key: 'keys',
-            parentParams: params.parentParams
+            extraParams: params.extraParams
           },
           {
             name: 'indexs',
             treeNodeType: TreeNodeType.INDEXES,
             key: 'indexs',
-            parentParams: params.parentParams
+            extraParams: params.extraParams
           },
         ]
 
