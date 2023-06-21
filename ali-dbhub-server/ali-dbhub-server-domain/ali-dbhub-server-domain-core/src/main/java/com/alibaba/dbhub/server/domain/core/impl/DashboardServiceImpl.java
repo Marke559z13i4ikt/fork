@@ -127,6 +127,7 @@ public class DashboardServiceImpl implements DashboardService {
         if (StringUtils.isNotBlank(param.getSearchKey())) {
             queryWrapper.like(DashboardDO::getName, param.getSearchKey());
         }
+        queryWrapper.eq(DashboardDO::getDeleted, YesOrNoEnum.NO.getLetter());
         Integer start = param.getPageNo();
         Integer offset = param.getPageSize();
         Page<DashboardDO> page = new Page<>(start, offset);
