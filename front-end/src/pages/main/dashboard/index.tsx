@@ -12,6 +12,7 @@ import {
   createChart,
   createDashboard,
   deleteDashboard,
+  getDashboardById,
   getDashboardList,
   updateChart,
   updateDashboard,
@@ -53,7 +54,7 @@ function Chart(props: IProps) {
     if (!curDashboard) {
       return;
     }
-    if (!chartIds || chartIds.length) {
+    if (!chartIds || !chartIds.length) {
       initCreateChart(curDashboard);
     }
   }, [curDashboard]);
@@ -63,7 +64,8 @@ function Chart(props: IProps) {
     const { data } = res;
     if (Array.isArray(data) && data.length > 0) {
       setDashboardList(data);
-      setCurDashboard(data[0]);
+      let curDashboard = await getDashboardById({ id: data[0].id });
+      setCurDashboard(curDashboard);
     }
   };
 
@@ -75,23 +77,13 @@ function Chart(props: IProps) {
       chartIds: [chartId],
     };
     updateDashboard(newDashboard);
-    setCurDashboard(newDashboard)
+    setCurDashboard(newDashboard);
   };
 
   const onClickDashboardItem = async (dashboard: IDashboardItem) => {
-    const { chartIds } = dashboard;
-    if (!chartIds || chartIds.length) {
-      let chartId = await createChart({});
-      const newDashboard = {
-        ...dashboard,
-        schema: JSON.stringify([[chartId]]),
-        chartIds: [chartId],
-      };
-      updateDashboard(newDashboard);
-      setCurDashboard(newDashboard);
-    } else {
-      setCurDashboard(dashboard);
-    }
+    const { id } = dashboard;
+    let res = await getDashboardById({ id });
+    setCurDashboard(res);
   };
 
   const renderLeft = () =>
@@ -140,7 +132,8 @@ function Chart(props: IProps) {
     ));
 
   const onAddChart = async (type: 'top' | 'bottom' | 'left' | 'right', rowIndex: number, colIndex: number) => {
-    const { schema, chartIds = [] } = curDashboard || {};
+    const { id, schema, chartIds = [] } = curDashboard || {};
+
     const chartList: number[][] = JSON.parse(schema || '') || [[]];
     let chartId = await createChart({});
     switch (type) {
@@ -160,11 +153,14 @@ function Chart(props: IProps) {
         break;
     }
 
-    await updateDashboard({
+    const newDashboard = {
       ...curDashboard,
+      id: id!,
       schema: JSON.stringify(chartList),
       chartIds: [...chartIds, chartId],
-    });
+    };
+    await updateDashboard(newDashboard);
+    setCurDashboard(newDashboard);
   };
 
   const onDelete = async (rowIndex: number, colIndex: number) => {

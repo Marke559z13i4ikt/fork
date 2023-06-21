@@ -10,7 +10,7 @@ export enum IChartType {
 // }
 
 export interface IDashboardItem {
-  id?: number;
+  id: number;
   name?: string;
   description?: string;
   /** 保存图表布局 二维数据 number[][]  */

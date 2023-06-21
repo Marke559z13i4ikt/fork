@@ -4,6 +4,7 @@ import createRequest from './base';
 
 /** 获取报表列表 */
 const getDashboardList = createRequest<{}, IPageResponse<IDashboardItem>>('/api/dashboard/list', { method: 'get' });
+const getDashboardById = createRequest<{ id: number }, IDashboardItem>('/api/dashboard/:id', { method: 'get' });
 /** 创建报表 */
 const createDashboard = createRequest<{ name: string; description: string; schema?: string; chartId?: number[] }, void>(
   '/api/dashboard/create',
@@ -25,6 +26,7 @@ const deleteChart = createRequest<{ id: number }, string>('/api/chart/:id', { me
 
 export {
   getDashboardList,
+  getDashboardById,
   createDashboard,
   updateDashboard,
   deleteDashboard,
