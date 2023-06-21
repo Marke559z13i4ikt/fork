@@ -1,4 +1,5 @@
 export default {
   'dashboard.title': 'dashboard',
-  'dashboard.left.edit': "Edit",
+  'dashboard.edit': "Edit",
+  'dashboard.delete': "Delete",
 };

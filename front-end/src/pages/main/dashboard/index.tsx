@@ -8,7 +8,14 @@ import Iconfont from '@/components/Iconfont';
 import ChartItem from './chart-item';
 import { ReactSortable, Store } from 'react-sortablejs';
 import { GlobalState } from '@/models/global';
-import { createChart, createDashboard, deleteDashboard, getDashboardList, updateDashboard } from '@/service/dashboard';
+import {
+  createChart,
+  createDashboard,
+  deleteDashboard,
+  getDashboardList,
+  updateChart,
+  updateDashboard,
+} from '@/service/dashboard';
 import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import styles from './index.less';
 import i18n from '@/i18n';
@@ -41,6 +48,16 @@ function Chart(props: IProps) {
     queryDashboardList();
   }, []);
 
+  useEffect(() => {
+    const { chartIds } = curDashboard || {};
+    if (!curDashboard) {
+      return;
+    }
+    if (!chartIds || chartIds.length) {
+      initCreateChart(curDashboard);
+    }
+  }, [curDashboard]);
+
   const queryDashboardList = async () => {
     let res = await getDashboardList({});
     const { data } = res;
@@ -50,12 +67,39 @@ function Chart(props: IProps) {
     }
   };
 
+  const initCreateChart = async (dashboard?: IDashboardItem) => {
+    let chartId = await createChart({});
+    const newDashboard = {
+      ...dashboard,
+      schema: JSON.stringify([[chartId]]),
+      chartIds: [chartId],
+    };
+    updateDashboard(newDashboard);
+    setCurDashboard(newDashboard)
+  };
+
+  const onClickDashboardItem = async (dashboard: IDashboardItem) => {
+    const { chartIds } = dashboard;
+    if (!chartIds || chartIds.length) {
+      let chartId = await createChart({});
+      const newDashboard = {
+        ...dashboard,
+        schema: JSON.stringify([[chartId]]),
+        chartIds: [chartId],
+      };
+      updateDashboard(newDashboard);
+      setCurDashboard(newDashboard);
+    } else {
+      setCurDashboard(dashboard);
+    }
+  };
+
   const renderLeft = () =>
     (dashboardList || []).map((i, index) => (
       <div
         key={index}
         className={cs({ [styles.boxLeftItem]: true, [styles.activeItem]: curDashboard?.id === i.id })}
-        onClick={() => setCurDashboard(i)}
+        onClick={() => onClickDashboardItem(i)}
       >
         <div>{i.name}</div>
         <Dropdown
@@ -98,20 +142,19 @@ function Chart(props: IProps) {
   const onAddChart = async (type: 'top' | 'bottom' | 'left' | 'right', rowIndex: number, colIndex: number) => {
     const { schema, chartIds = [] } = curDashboard || {};
     const chartList: number[][] = JSON.parse(schema || '') || [[]];
-    let chartRes = await createChart({ name: '' });
-    if (!chartRes) return;
+    let chartId = await createChart({});
     switch (type) {
       case 'top':
-        chartList.splice(rowIndex, 0, [chartRes]);
+        chartList.splice(rowIndex, 0, [chartId]);
         break;
       case 'bottom':
-        chartList.splice(rowIndex + 1, 0, [chartRes]);
+        chartList.splice(rowIndex + 1, 0, [chartId]);
         break;
       case 'left':
-        chartList[rowIndex].splice(colIndex, 0, chartRes);
+        chartList[rowIndex].splice(colIndex, 0, chartId);
         break;
       case 'right':
-        chartList[rowIndex].splice(colIndex + 1, 0, chartRes);
+        chartList[rowIndex].splice(colIndex + 1, 0, chartId);
         break;
       default:
         break;
@@ -120,7 +163,21 @@ function Chart(props: IProps) {
     await updateDashboard({
       ...curDashboard,
       schema: JSON.stringify(chartList),
-      chartIds: [...chartIds, chartRes],
+      chartIds: [...chartIds, chartId],
+    });
+  };
+
+  const onDelete = async (rowIndex: number, colIndex: number) => {
+    const { schema } = curDashboard || {};
+    const chartList: number[][] = JSON.parse(schema || '') || [[]];
+    if (chartList.length === 1) {
+      chartList.splice(rowIndex, 1);
+    } else {
+      chartList[rowIndex].splice(colIndex, 1);
+    }
+    await updateDashboard({
+      ...curDashboard,
+      schema: JSON.stringify(chartList),
     });
   };
 
@@ -153,31 +210,11 @@ function Chart(props: IProps) {
                     id={chartId}
                     key={chartId}
                     canAddRowItem={rowData.length < 3}
-                    addChartTop={() => {
-                      data.splice(rowIndex, 0, [initChartItem]);
-                      setDashboardList([...dataList]);
-                    }}
-                    addChartBottom={() => {
-                      data.splice(rowIndex + 1, 0, [initChartItem]);
-                      setDashboardList([...dataList]);
-                    }}
-                    addChartLeft={() => {
-                      rowData.splice(colIndex, 0, initChartItem);
-                      setDashboardList([...dataList]);
-                    }}
-                    addChartRight={() => {
-                      rowData.splice(colIndex + 1, 0, initChartItem);
-                      setDashboardList([...dataList]);
-                    }}
-                    onDelete={() => {
-                      if (rowData.length === 1) {
-                        data.splice(rowIndex, 1);
-                        setDashboardList([...dataList]);
-                      } else {
-                        rowData.splice(colIndex, 1);
-                        setDashboardList([...dataList]);
-                      }
-                    }}
+                    addChartTop={() => onAddChart('top', rowIndex, colIndex)}
+                    addChartBottom={() => onAddChart('bottom', rowIndex, colIndex)}
+                    addChartLeft={() => onAddChart('left', rowIndex, colIndex)}
+                    addChartRight={() => onAddChart('right', rowIndex, colIndex)}
+                    onDelete={() => onDelete(rowIndex, colIndex)}
                   />
                 </div>
               ))}
@@ -199,7 +236,7 @@ function Chart(props: IProps) {
           </div>
           {renderLeft()}
         </div>
-        <div className={styles.box_right}>{renderContent()}</div>
+        <div className={styles.boxRight}>{renderContent()}</div>
       </DraggableContainer>
 
       <Modal
