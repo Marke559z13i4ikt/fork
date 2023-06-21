@@ -36,7 +36,7 @@ interface Option {
 function RenderSelectDatabase() {
   const [options, setOptions] = useState<Option[]>();
   const { state, dispatch } = useReducerContext();
-  const { currentDatabase } = state;
+  const { currentWorkspaceData } = state;
 
   useEffect(() => {
     getDataSource();
@@ -66,7 +66,7 @@ function RenderSelectDatabase() {
       return t.label;
     });
 
-    const currentDatabase = {
+    const currentWorkspaceData = {
       dataSourceId: valueArr[0],
       databaseSourceName: labelArr[0],
       databaseName: labelArr[1],
@@ -74,17 +74,19 @@ function RenderSelectDatabase() {
     }
 
     dispatch({
-      type: workspaceActionType.CURRENT_DATABASE,
-      payload: currentDatabase
+      type: workspaceActionType.CURRENT_WORKSPACE_DATA,
+      payload: currentWorkspaceData
     });
   };
 
+  // 及联loadData
   const loadData = (selectedOptions: any) => {
     if (selectedOptions.length > 1) {
       return
     }
+
     const targetOption = selectedOptions[0];
-    treeConfig[TreeNodeType.DATA_SOURCE]?.getChildren({
+    treeConfig[TreeNodeType.DATA_SOURCE].getChildren!({
       id: targetOption.value
     }).then(res => {
       let newOptions = res.map((t) => {
@@ -98,6 +100,7 @@ function RenderSelectDatabase() {
       setOptions([...(options || [])]);
     })
 
+    // TODO:根据后端字段 如果有SCHEMAS再去查询SCHEMAS
     // if (targetOption.type === TreeNodeType.SCHEMAS) {
     //   treeConfig[TreeNodeType.DATA_SOURCE]?.getChildren({
     //     id: targetOption.value
@@ -125,7 +128,7 @@ function RenderSelectDatabase() {
   );
 
   function renderCurrentSelected() {
-    const { databaseName, schemaName, databaseSourceName } = currentDatabase;
+    const { databaseName, schemaName, databaseSourceName } = currentWorkspaceData;
     const currentSelectedArr = [databaseSourceName, databaseName, schemaName].filter(t => t);
     return currentSelectedArr.join('/');
   }
@@ -157,21 +160,19 @@ function RenderSelectDatabase() {
 
 function RenderTableBox() {
   const { state, dispatch } = useReducerContext();
-  const { currentDatabase } = state;
+  const { currentWorkspaceData } = state;
   const [initialData, setInitialData] = useState<ITreeNode[]>();
 
   useEffect(() => {
     getInitialData();
-  }, [currentDatabase])
+  }, [currentWorkspaceData])
 
   function getInitialData() {
     treeConfig[TreeNodeType.TABLES].getChildren!({
-      dataSourceId: currentDatabase.dataSourceId,
-      databaseName: currentDatabase.databaseName,
-      schemaName: currentDatabase.schemaName,
-      databaseType: currentDatabase.databaseType,
       pageNo: 1,
       pageSize: 999,
+      ...currentWorkspaceData,
+      extraParams: currentWorkspaceData
     }).then(res => {
       setInitialData(res);
     })

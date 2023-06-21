@@ -2,21 +2,21 @@ import {getCurrentWorkspaceDatabase, setCurrentWorkspaceDatabase } from '@/utils
 import { ITreeNode } from '@/typings/tree';
 import { TreeNodeType } from '@/constants/tree';
 
-export type ICurrentDatabase = {
+export type ICurrentWorkspaceData = {
   databaseType: TreeNodeType;
-  databaseSourceName?: string;
-  dataSourceId?: number;
-  databaseName?: string;
+  databaseSourceName: string;
+  dataSourceId: number;
+  databaseName: string;
   schemaName?: string;
 }
 
 export interface IState {
-  currentDatabase: ICurrentDatabase;
-  dblclickTreeNodeData: ITreeNode;
+  currentWorkspaceData: ICurrentWorkspaceData;
+  dblclickTreeNodeData: ITreeNode | undefined;
 }
 
 export enum workspaceActionType {
-  CURRENT_DATABASE = 'currentDatabase',
+  CURRENT_WORKSPACE_DATA = 'currentWorkspaceData',
   DBLCLICK_TREE_NODE = 'dblclickTreeNodeData',
 }
 
@@ -25,8 +25,8 @@ export interface IAction {
   payload?: any;
 }
 
-export const initState = {
-  currentDatabase: getCurrentWorkspaceDatabase(),
+export const initState:IState = {
+  currentWorkspaceData: getCurrentWorkspaceDatabase(),
   dblclickTreeNodeData: undefined
 }
 
@@ -34,8 +34,8 @@ export const reducer = (preState: IState, action: IAction ) => {
   const { type, payload } = action;
 
   switch(type) {
-    case workspaceActionType.CURRENT_DATABASE:
-      return changeCurrentDatabase(preState,payload);
+    case workspaceActionType.CURRENT_WORKSPACE_DATA:
+      return changeCurrentWorkspaceData(preState,payload);
     case workspaceActionType.DBLCLICK_TREE_NODE:
       return {
         ...preState,
@@ -44,10 +44,10 @@ export const reducer = (preState: IState, action: IAction ) => {
   }
 }
 
-function changeCurrentDatabase(preState:IState, payload:any){
+function changeCurrentWorkspaceData(preState:IState, payload:any){
   setCurrentWorkspaceDatabase(payload);
   return {
     ...preState,
-    currentDatabase: payload,
+    currentWorkspaceData: payload,
   }
 }

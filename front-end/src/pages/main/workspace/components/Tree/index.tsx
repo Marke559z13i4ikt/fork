@@ -78,7 +78,7 @@ function TreeNode(props: TreeNodeIProps) {
     const treeNodeConfig: ITreeConfigItem = treeConfig[data.treeNodeType];
     treeNodeConfig.getChildren?.({
       ...data,
-      ...(data.parentParams || {})
+      ...(data.extraParams || {}),
     }).then(res => {
       if (res.length) {
         setTimeout(() => {
@@ -88,6 +88,7 @@ function TreeNode(props: TreeNodeIProps) {
         }, 200);
       }
       else {
+        // 处理树可能出现不连续的情况 
         // if (treeNodeConfig.next) {
         //   data.pretendNodeType = treeNodeConfig.next;
         //   loadData(data);

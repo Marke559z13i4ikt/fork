@@ -32,8 +32,8 @@ export default memo<IProps>(function WorkspaceRight(props) {
     console.log(dblclickTreeNodeData)
 
     if (dblclickTreeNodeData) {
-      const {databaseType,parentParams} = dblclickTreeNodeData
-      const {databaseName,schemaName,dataSourceId,dataSourceName} = parentParams || {};
+      const {databaseType,extraParams} = dblclickTreeNodeData
+      const {databaseName,schemaName,dataSourceId,dataSourceName} = extraParams || {};
       let flag = false;
       consoleList?.map((i) => {
         if (i.databaseName === databaseName && i.dataSourceId === dataSourceId) {
