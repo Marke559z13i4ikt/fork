@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { Button, Dropdown, Form, Input, Modal, message } from 'antd';
 import { connect, Dispatch } from 'umi';
 import cs from 'classnames';
-import { IChartType, IDashboardItem, IChartDataItem, IChartDataSortItem } from '@/typings/dashboard';
+import { IChartItem, IChartType, IDashboardItem } from '@/typings/dashboard';
 import DraggableContainer from '@/components/DraggableContainer';
 import Iconfont from '@/components/Iconfont';
 import ChartItem from './chart-item';
-import { Button, Form, Input, Modal } from 'antd';
 import { ReactSortable, Store } from 'react-sortablejs';
 import { GlobalState } from '@/models/global';
-import { createDashboard, getDashboardList, updateDashboard } from '@/service/dashboard';
-import { EditOutlined } from '@ant-design/icons';
+import { createChart, createDashboard, deleteDashboard, getDashboardList, updateDashboard } from '@/service/dashboard';
+import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import styles from './index.less';
+import i18n from '@/i18n';
 
 interface IProps {
   className?: string;
@@ -18,50 +19,117 @@ interface IProps {
   dispatch: Dispatch;
 }
 
-const initChartItemData: IChartDataItem = {
-  sqlContext: 'sqlContext',
-  sqlData: 'aa',
-  chatType: IChartType.Line,
-  chatParam: {
-    x: '',
-    y: '',
-  },
+export const initChartItem: IChartItem = {
+  name: '',
+  description: '',
+  // chatType: IChartType.Line,
+  schema: '{"chatType":"","xAxis":"","yAxis":""}',
 };
 
 function Chart(props: IProps) {
   const { className } = props;
 
-  const [dataList, setDataList] = useState<IDashboardItem[]>([]);
-  const [curItem, setCurItem] = useState<IDashboardItem>();
+  const [dashboardList, setDashboardList] = useState<IDashboardItem[]>([]);
+  const [curDashboard, setCurDashboard] = useState<IDashboardItem>();
   const [openAddDashboard, setOpenAddDashboard] = useState(false);
+
   const [form] = Form.useForm(); // 创建一个表单实例
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     // 获取列表数据
     queryDashboardList();
-    console.log('chart', props);
   }, []);
 
   const queryDashboardList = async () => {
     let res = await getDashboardList({});
     const { data } = res;
     if (Array.isArray(data) && data.length > 0) {
-      setDataList(data);
-      setCurItem(data[0]);
+      setDashboardList(data);
+      setCurDashboard(data[0]);
     }
   };
 
+  const renderLeft = () =>
+    (dashboardList || []).map((i, index) => (
+      <div
+        key={index}
+        className={cs({ [styles.boxLeftItem]: true, [styles.activeItem]: curDashboard?.id === i.id })}
+        onClick={() => setCurDashboard(i)}
+      >
+        <div>{i.name}</div>
+        <Dropdown
+          menu={{
+            items: [
+              {
+                key: 'Edit',
+                label: i18n('dashboard.edit'),
+                onClick: () => {
+                  const { id, name, description } = i;
+                  setOpenAddDashboard(true);
+                  form.setFieldsValue({
+                    id,
+                    name,
+                    description,
+                  });
+                },
+              },
+              {
+                key: 'Delete',
+                label: i18n('dashboard.delete'),
+                onClick: async () => {
+                  const { id } = i;
+                  await deleteDashboard({ id });
+                  messageApi.open({
+                    type: 'success',
+                    content: 'delete dashboard success.',
+                  });
+                  queryDashboardList();
+                },
+              },
+            ],
+          }}
+        >
+          <MoreOutlined />
+        </Dropdown>
+      </div>
+    ));
+
+  const onAddChart = async (type: 'top' | 'bottom' | 'left' | 'right', rowIndex: number, colIndex: number) => {
+    const { schema, chartIds = [] } = curDashboard || {};
+    const chartList: number[][] = JSON.parse(schema || '') || [[]];
+    let chartRes = await createChart({ name: '' });
+    if (!chartRes) return;
+    switch (type) {
+      case 'top':
+        chartList.splice(rowIndex, 0, [chartRes]);
+        break;
+      case 'bottom':
+        chartList.splice(rowIndex + 1, 0, [chartRes]);
+        break;
+      case 'left':
+        chartList[rowIndex].splice(colIndex, 0, chartRes);
+        break;
+      case 'right':
+        chartList[rowIndex].splice(colIndex + 1, 0, chartRes);
+        break;
+      default:
+        break;
+    }
+
+    await updateDashboard({
+      ...curDashboard,
+      schema: JSON.stringify(chartList),
+      chartIds: [...chartIds, chartRes],
+    });
+  };
+
   const renderContent = () => {
-    const { data, name } = curItem || {};
-    if (!data) return;
+    const { schema, name } = curDashboard || {};
+    if (!schema) return;
 
-    const sortData = (data || []).reduce((acc: IChartDataSortItem[], cur, i) => {
-      const tmp = (cur || []).map((c, ii) => ({ id: `${i}_${ii}`, ...c }));
-      acc.push(...tmp);
-      return acc;
-    }, []);
+    const chartList = JSON.parse(schema);
 
-    console.log(sortData, 'sortData');
     return (
       <>
         <div className={styles.boxRightTitle}>
@@ -77,40 +145,37 @@ function Chart(props: IProps) {
             }}
             onAdd={() => {}}
           > */}
-          {data.map((rowData, rowIndex) => (
+          {chartList.map((rowData: number[], rowIndex: number) => (
             <div key={rowIndex} className={styles.boxRightContentRow}>
-              {rowData.map((item, colIndex) => (
+              {rowData.map((chartId: number, colIndex: number) => (
                 <div className={styles.boxRightContentColumn} style={{ width: `${100 / rowData.length}%` }}>
                   <ChartItem
-                    id={`${rowIndex}_${colIndex}`}
-                    index={colIndex}
-                    key={`${rowIndex}_${colIndex}`}
-                    data={item}
-                    connections={[]}
+                    id={chartId}
+                    key={chartId}
                     canAddRowItem={rowData.length < 3}
                     addChartTop={() => {
-                      data.splice(rowIndex, 0, [initChartItemData]);
-                      setDataList([...dataList]);
+                      data.splice(rowIndex, 0, [initChartItem]);
+                      setDashboardList([...dataList]);
                     }}
                     addChartBottom={() => {
-                      data.splice(rowIndex + 1, 0, [initChartItemData]);
-                      setDataList([...dataList]);
+                      data.splice(rowIndex + 1, 0, [initChartItem]);
+                      setDashboardList([...dataList]);
                     }}
                     addChartLeft={() => {
-                      rowData.splice(colIndex, 0, initChartItemData);
-                      setDataList([...dataList]);
+                      rowData.splice(colIndex, 0, initChartItem);
+                      setDashboardList([...dataList]);
                     }}
                     addChartRight={() => {
-                      rowData.splice(colIndex + 1, 0, initChartItemData);
-                      setDataList([...dataList]);
+                      rowData.splice(colIndex + 1, 0, initChartItem);
+                      setDashboardList([...dataList]);
                     }}
                     onDelete={() => {
                       if (rowData.length === 1) {
                         data.splice(rowIndex, 1);
-                        setDataList([...dataList]);
+                        setDashboardList([...dataList]);
                       } else {
                         rowData.splice(colIndex, 1);
-                        setDataList([...dataList]);
+                        setDashboardList([...dataList]);
                       }
                     }}
                   />
@@ -128,45 +193,11 @@ function Chart(props: IProps) {
     <>
       <DraggableContainer layout="row" className={cs(styles.box, className)}>
         <div className={styles.boxLeft}>
-          <div className={styles.boxLeftTitle}>Dashboard</div>
-          <Button className={styles.createDashboardBtn} type="primary" onClick={() => setOpenAddDashboard(true)}>
-            Create Dashboard
-          </Button>
-          {(dataList || []).map((i, index) => (
-            <div
-              key={index}
-              className={cs({ [styles.boxLeftItem]: true, [styles.activeItem]: curItem?.id === i.id })}
-              onClick={() => setCurItem(i)}
-            >
-              <div>{i.name}</div>
-              <EditOutlined
-                className={styles.boxLeftItemIcon}
-                onClick={() => {
-                  const { id, name, description } = i;
-                  setOpenAddDashboard(true);
-                  form.setFieldsValue({
-                    id,
-                    name,
-                    description,
-                  });
-                }}
-              />
-            </div>
-          ))}
-          {/* 
-        <Button
-          onClick={() => {
-            props.dispatch({
-              type: 'global/updateSettings',
-              payload: {
-                theme: 'dark',
-                language: 'en',
-              },
-            });
-          }}
-        >
-          测试dva
-        </Button> */}
+          <div className={styles.boxLeftTitle}>
+            <div>{i18n('dashboard.title')}</div>
+            <PlusOutlined onClick={() => setOpenAddDashboard(true)} />
+          </div>
+          {renderLeft()}
         </div>
         <div className={styles.box_right}>{renderContent()}</div>
       </DraggableContainer>
@@ -221,3 +252,20 @@ function Chart(props: IProps) {
 export default connect(({ global }: { global: GlobalState }) => ({
   settings: global.settings,
 }))(Chart);
+
+{
+  /* 
+        <Button
+          onClick={() => {
+            props.dispatch({
+              type: 'global/updateSettings',
+              payload: {
+                theme: 'dark',
+                language: 'en',
+              },
+            });
+          }}
+        >
+          测试dva
+        </Button> */
+}

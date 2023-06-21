@@ -1,4 +1,4 @@
-import { IChartData, IChartDataItem, IChartType } from '@/typings/dashboard';
+import { IChartItem, IChartType } from '@/typings/dashboard';
 import React, { useRef, useState } from 'react';
 import styles from './index.less';
 import addImage from '@/assets/img/add.svg';
@@ -9,11 +9,10 @@ import Pie from '../chart/pie';
 import Bar from '../chart/bar';
 import { DashOutlined } from '@ant-design/icons';
 import { Dropdown, MenuProps } from 'antd';
+import { initChartItem } from '..';
 interface IChartItemProps {
-  id: string;
-  index: number;
-  data: IChartDataItem;
-  connections: Array<any>;
+  id: number;
+  data: IChartItem;
   canAddRowItem: boolean;
 
   onDelete?: () => void;
@@ -23,47 +22,33 @@ interface IChartItemProps {
   addChartRight?: () => void;
 }
 
-const defaultData: IChartDataItem = {
-  sqlContext: '',
-  sqlData: '',
-  chartType: IChartType.Line,
-  chartParam: {},
-};
-
 function ChartItem(props: IChartItemProps) {
-  const [data, setData] = useState<IChartDataItem>(defaultData);
+  const [data, setData] = useState<IChartItem>(initChartItem);
   const [isEditing, setIsEditing] = useState();
   const chartRef = useRef<any>();
 
-  const renderLeftAndRightPlusIcon = () => {
+  const renderPlusIcon = () => {
     return (
-      props.canAddRowItem && (
-        <>
+      <>
+        {props.canAddRowItem && (
           <div onClick={props.addChartLeft} className={styles.left_overlay_add}>
             <div className={styles.add_chart_icon}>
               <img className={styles.add_chart_plus_icon} src={addImage} alt="Add chart" />
             </div>
           </div>
-
+        )}
+        {props.canAddRowItem && (
           <div onClick={props.addChartRight} className={styles.right_overlay_add}>
             <div className={styles.add_chart_icon}>
               <img className={styles.add_chart_plus_icon} src={addImage} alt="Add chart" />
             </div>
           </div>
-        </>
-      )
-    );
-  };
-
-  const renderTopAndBottomPlusIcon = () => {
-    return (
-      <>
+        )}
         <div onClick={props.addChartTop} className={styles.top_overlay_add}>
           <div className={cs(styles.add_chart_icon, styles.add_chart_icon_y)}>
             <img className={styles.add_chart_plus_icon} src={addImage} alt="Add chart" />
           </div>
         </div>
-
         <div onClick={props.addChartBottom} className={styles.bottom_overlay_add}>
           <div className={cs(styles.add_chart_icon, styles.add_chart_icon_y)}>
             <img className={styles.add_chart_plus_icon} src={addImage} alt="Add chart" />
@@ -127,11 +112,9 @@ function ChartItem(props: IChartItemProps) {
 
   return (
     <div className={styles.container}>
-      {renderLeftAndRightPlusIcon()}
-      {renderTopAndBottomPlusIcon()}
+      {renderPlusIcon()}
       <div className={styles.title_bar}>
         <div className={styles.title}>{IChartType[data?.chartType]}</div>
-
         <Dropdown
           menu={{
             items: [
