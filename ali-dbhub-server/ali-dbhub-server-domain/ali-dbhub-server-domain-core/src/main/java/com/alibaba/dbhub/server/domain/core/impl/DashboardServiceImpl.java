@@ -48,10 +48,11 @@ public class DashboardServiceImpl implements DashboardService {
     public DataResult<Long> create(DashboardCreateParam param) {
         param.setGmtCreate(LocalDateTime.now());
         param.setGmtModified(LocalDateTime.now());
+        param.setDeleted(YesOrNoEnum.NO.getLetter());
         DashboardDO dashboardDO = dashboardConverter.param2do(param);
-        long id = dashboardMapper.insert(dashboardDO);
-        insertDashboardRelation(id, param.getChartIds());
-        return DataResult.of(id);
+        dashboardMapper.insert(dashboardDO);
+        insertDashboardRelation(dashboardDO.getId(), param.getChartIds());
+        return DataResult.of(dashboardDO.getId());
     }
 
     @Override
