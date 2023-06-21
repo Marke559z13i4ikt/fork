@@ -3,10 +3,10 @@ import { ITreeNode } from '@/typings/tree';
 import { TreeNodeType } from '@/constants/tree';
 
 export type ICurrentWorkspaceData = {
-  databaseType: TreeNodeType;
-  databaseSourceName: string;
   dataSourceId: number;
+  databaseSourceName: string;
   databaseName: string;
+  databaseType: TreeNodeType;
   schemaName?: string;
 }
 

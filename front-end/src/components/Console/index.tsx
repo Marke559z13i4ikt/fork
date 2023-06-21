@@ -1,7 +1,7 @@
 import { formatParams, uuid } from '@/utils/common';
 import connectToEventSource from '@/utils/eventSource';
 import { Button, Spin } from 'antd';
-import React, { ForwardedRef, useMemo, useRef, useState } from 'react';
+import React, { ForwardedRef, useEffect, useMemo, useRef, useState } from 'react';
 import ChatInput from './ChatInput';
 import Editor, { IExportRefFunction } from './MonacoEditor';
 import { format } from 'sql-formatter';
@@ -34,15 +34,20 @@ interface IProps {
   hasAiChat: boolean;
   /** 是否可以开启SQL转到自然语言的相关ai操作 */
   hasAi2Lang: boolean;
+  value?: string;
 }
 
 function Console(props: IProps) {
-  const { hasAiChat = true } = props;
+  const { hasAiChat = true, value } = props;
   const uid = useMemo(() => uuid(), []);
   const chatResult = useRef('');
   const editorRef = useRef<IExportRefFunction>();
-  const [context, setContext] = useState('123123');
+  const [context, setContext] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setContext(value)
+  }, [value])
 
   const onPressChatInput = (value: string) => {
     const params = formatParams({

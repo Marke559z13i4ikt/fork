@@ -1,4 +1,4 @@
-import React, { memo, useRef, useEffect, useState} from 'react';
+import React, { memo, useRef, useEffect, useState } from 'react';
 import styles from './index.less';
 import classnames from 'classnames';
 import DraggableContainer from '@/components/DraggableContainer';
@@ -23,26 +23,28 @@ export default memo<IProps>(function WorkspaceRight(props) {
   const [activeConsoleId, setActiveConsoleId] = useState<number>();
   const { state, dispatch } = useReducerContext();
   const { dblclickTreeNodeData } = state;
+  const [consoleValue, setConsoleValue] = useState<string>();
 
-  useEffect(()=>{
+  useEffect(() => {
     getConsoleList();
-  },[])
+  }, [])
 
-  useEffect(()=>{
-    console.log(dblclickTreeNodeData)
-
+  useEffect(() => {
     if (dblclickTreeNodeData) {
-      const {databaseType,extraParams} = dblclickTreeNodeData
-      const {databaseName,schemaName,dataSourceId,dataSourceName} = extraParams || {};
+      const { extraParams } = dblclickTreeNodeData
+      const { databaseName, schemaName, dataSourceId, dataSourceName, databaseType, tableName } = extraParams || {};
       let flag = false;
+
       consoleList?.map((i) => {
         if (i.databaseName === databaseName && i.dataSourceId === dataSourceId) {
           flag = true;
           setActiveConsoleId(i.id);
+          setConsoleValue(`SELECT * FROM ${tableName}`);
         }
       });
-      const name = [databaseName,schemaName,'console'].filter(t=>t).join('-')
+
       if (!flag) {
+        const name = [databaseName, schemaName, 'console'].filter(t => t).join('-');
         let p = {
           name: name,
           type: databaseType,
@@ -67,12 +69,13 @@ export default memo<IProps>(function WorkspaceRight(props) {
             status: ConsoleStatus.DRAFT,
           };
           setActiveConsoleId(newConsole.id);
-          setConsoleList([...(consoleList||[]), newConsole]);
-          console.log([...(consoleList||[]), newConsole])
+          setConsoleList([...(consoleList || []), newConsole]);
+          console.log([...(consoleList || []), newConsole])
         });
       }
+
     }
-  },[dblclickTreeNodeData])
+  }, [dblclickTreeNodeData])
 
   function getConsoleList() {
     let p = {
@@ -135,12 +138,12 @@ export default memo<IProps>(function WorkspaceRight(props) {
     });
   }
 
-  function onChange(key: string){
-    const index = consoleList?.findIndex(t=> t.id === +key)
+  function onChange(key: string) {
+    const index = consoleList?.findIndex(t => t.id === +key)
     setActiveConsoleId(index!)
   }
 
-  const onEdit = (targetKey:any, action: 'add' | 'remove') => {
+  const onEdit = (targetKey: any, action: 'add' | 'remove') => {
     if (action === 'remove') {
       closeWindowTab(targetKey);
     }
@@ -171,8 +174,8 @@ export default memo<IProps>(function WorkspaceRight(props) {
       tabOpened: 'n',
     };
 
-    const window = consoleList?.find(t=> t.id === +targetKey);
-    if(!window?.status){
+    const window = consoleList?.find(t => t.id === +targetKey);
+    if (!window?.status) {
       return
     }
     if (window!.status === 'DRAFT') {
@@ -184,7 +187,7 @@ export default memo<IProps>(function WorkspaceRight(props) {
 
   return <div className={classnames(styles.box, className)}>
     <div className={styles.tab_box}>
-     <Tabs
+      <Tabs
         hideAdd
         onChange={onChange}
         onEdit={onEdit}
@@ -192,23 +195,23 @@ export default memo<IProps>(function WorkspaceRight(props) {
         items={consoleList?.map((t, i) => {
           return {
             label: t.name,
-            key: t.id+'',
+            key: t.id + '',
           };
         })}
       />
     </div>
-     {
-      consoleList?.map((t,index)=>{
-        return <div className={classnames(styles.console_box,{[styles.active_console_box]: activeConsoleId === t.id}) }>
-        <DraggableContainer layout="column" className={styles.box_right_center}>
-          <div ref={draggableRef} className={styles.box_right_console}>
-            <Console hasAiChat={true}  hasAi2Lang={true}/>
-          </div>
-          <div className={styles.box_right_result}>
-            <p>{t.databaseName}</p>
-          </div>
-        </DraggableContainer>
-      </div>
+    {
+      consoleList?.map((t, index) => {
+        return <div className={classnames(styles.console_box, { [styles.active_console_box]: activeConsoleId === t.id })}>
+          <DraggableContainer layout="column" className={styles.box_right_center}>
+            <div ref={draggableRef} className={styles.box_right_console}>
+              <Console hasAiChat={true} hasAi2Lang={true} value={consoleValue} />
+            </div>
+            <div className={styles.box_right_result}>
+              <p>{t.databaseName}</p>
+            </div>
+          </DraggableContainer>
+        </div>
       })
     }
   </div>

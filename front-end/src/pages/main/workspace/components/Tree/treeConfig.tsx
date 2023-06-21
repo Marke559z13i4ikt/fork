@@ -73,6 +73,11 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
               key: t.id!,
               name: t.alias,
               treeNodeType: TreeNodeType.DATA_SOURCE,
+              extraParams: {
+                databaseType: t.type,
+                dataSourceId: t.id,
+                dataSourceName: t.name,
+              }
             }
           })
           r(data);
@@ -83,7 +88,7 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
     },
   },
   [TreeNodeType.DATA_SOURCE]: {
-    getChildren: (params: { id: number }) => {
+    getChildren: (params) => {
       return new Promise((r: (value: ITreeNode[]) => void, j) => {
         connectionService.getDBList(params).then(res => {
           const data: ITreeNode[] = res.map(t => {
@@ -91,6 +96,10 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
               key: t.name,
               name: t.name,
               treeNodeType: TreeNodeType.DATABASE,
+              extraParams: {
+                ...params.extraParams,
+                databaseName: t.name
+              }
             }
           })
           r(data);
@@ -161,7 +170,6 @@ export const treeConfig: { [key in TreeNodeType]: ITreeConfigItem } = {
     icon: '\ueac5',
     getChildren: (params) => {
       return new Promise((r: (value: ITreeNode[]) => void, j) => {
-
         mysqlServer.getList(params).then(res => {
           const tableList: ITreeNode[] = res.data?.map((t: any) => {
             return {

@@ -47,22 +47,23 @@ function RenderSelectDatabase() {
       pageNo: 1,
       pageSize: 999,
     };
-    connectionService.getList(p).then((res) => {
-      let newOptions: any = res.data.map((t) => {
+    treeConfig[TreeNodeType.DATA_SOURCES].getChildren!(p).then(res => {
+      let newOptions: any = res.map((t) => {
         return {
-          label: t.alias,
-          value: t.id,
+          label: t.name,
+          value: t.key,
           type: TreeNodeType.DATA_SOURCE,
           isLeaf: false,
+          databaseType: t.extraParams?.databaseType
         };
       });
       setOptions(newOptions);
-    });
+    })
   }
 
-  const onChange: any = (valueArr: (number)[], selectedOptions: Option[]) => {
+  const onChange: any = (valueArr: any, selectedOptions: any) => {
     let labelArr: string[] = [];
-    labelArr = selectedOptions.map((t) => {
+    labelArr = selectedOptions.map((t: any) => {
       return t.label;
     });
 
@@ -71,6 +72,7 @@ function RenderSelectDatabase() {
       databaseSourceName: labelArr[0],
       databaseName: labelArr[1],
       schemaName: labelArr[2],
+      databaseType: selectedOptions[0].databaseType
     }
 
     dispatch({
@@ -93,7 +95,8 @@ function RenderSelectDatabase() {
         return {
           label: t.name,
           value: t.key,
-          type: TreeNodeType.DATABASE
+          type: TreeNodeType.DATABASE,
+          databaseType: t.extraParams?.databaseType
         };
       });
       targetOption.children = newOptions;
@@ -132,7 +135,6 @@ function RenderSelectDatabase() {
     const currentSelectedArr = [databaseSourceName, databaseName, schemaName].filter(t => t);
     return currentSelectedArr.join('/');
   }
-
 
   return (
     <div className={styles.select_database_box}>
