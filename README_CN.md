@@ -1,9 +1,11 @@
+### 🎁 Chat2DB将迁移到新地址：[Chat2DB++](https://github.com/chat2db/Chat2DB) 6月底将有重大升级，敬请期待 🔥🔥🔥
+
 
 <h1 align="center">Chat2DB</h1>
 
 <div align="center">
 
-🔥🔥🔥 智能且多功能的SQL客户端和报表工具，适用于各种数据库
+ 智能且多功能的SQL客户端和报表工具，适用于各种数据库
 
 [![License](https://img.shields.io/github/license/alibaba/fastjson2?color=4D7A97&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Java support](https://img.shields.io/badge/Java-17+-green?logo=java&logoColor=white)](https://openjdk.java.net/)
@@ -93,7 +95,7 @@ Languages： 中文 [English](README.md)
   <a><img src="https://img.alicdn.com/imgextra/i2/O1CN01anrJMI1FEtSBbmTau_!!6000000000456-0-tps-1594-964.jpg" width="60%"/></a>
 
 方式二（推荐）：使用我们提供了一个统一的代理服务。
-- 1、不需要opeanAI的key
+- 1、不需要openAI的key
 - 2、不需要代理，不需要VPN只要可以联网即可使用。
 
 为了方便大家更快速的使用AI的能力，可以关注微信公众号，回复"AI" 获得我们的自定义API_KEY，申请完成之后参考下图进行配置即可进行使用
