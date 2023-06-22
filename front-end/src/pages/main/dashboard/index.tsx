@@ -163,18 +163,24 @@ function Chart(props: IProps) {
     setCurDashboard(newDashboard);
   };
 
-  const onDelete = async (rowIndex: number, colIndex: number) => {
-    const { schema } = curDashboard || {};
+  const onDelete = async (chartId: number, rowIndex: number, colIndex: number) => {
+    const { id, schema, chartIds } = curDashboard || {};
+
     const chartList: number[][] = JSON.parse(schema || '') || [[]];
-    if (chartList.length === 1) {
+    if (chartList[rowIndex].length === 1) {
       chartList.splice(rowIndex, 1);
     } else {
       chartList[rowIndex].splice(colIndex, 1);
     }
-    await updateDashboard({
+
+    const newDashboard = {
+      id: id!,
       ...curDashboard,
       schema: JSON.stringify(chartList),
-    });
+      chartIds: chartIds?.filter((id) => id !== chartId),
+    };
+    await updateDashboard(newDashboard);
+    setCurDashboard(newDashboard);
   };
 
   const renderContent = () => {
@@ -210,7 +216,7 @@ function Chart(props: IProps) {
                     addChartBottom={() => onAddChart('bottom', rowIndex, colIndex)}
                     addChartLeft={() => onAddChart('left', rowIndex, colIndex)}
                     addChartRight={() => onAddChart('right', rowIndex, colIndex)}
-                    onDelete={() => onDelete(rowIndex, colIndex)}
+                    onDelete={(id: number) => onDelete(id, rowIndex, colIndex)}
                   />
                 </div>
               ))}

@@ -49,7 +49,7 @@ interface IChartItemProps {
   id: number;
   canAddRowItem: boolean;
 
-  onDelete?: () => void;
+  onDelete?: (id: number) => void;
   addChartTop?: () => void;
   addChartBottom?: () => void;
   addChartLeft?: () => void;
@@ -153,7 +153,7 @@ function ChartItem(props: IChartItemProps) {
   const onDeleteChart = () => {
     const { id } = props;
     deleteChart({ id });
-    props.onDelete && props.onDelete();
+    props.onDelete && props.onDelete(id);
   };
 
   const renderEmptyBlock = () => {
@@ -181,10 +181,10 @@ function ChartItem(props: IChartItemProps) {
         <div className={styles.editor}>编辑区域</div>
         <Form
           form={form}
-          labelCol={{ span: 8 }}
-          wrapperCol={{ span: 16 }}
+          labelCol={{ span: 6 }}
+          wrapperCol={{ span: 18 }}
           layout="horizontal"
-          style={{ minWidth: 320 }}
+          style={{ minWidth: 280, width: '100%' }}
           autoComplete="off"
           onValuesChange={handleChartConfigChange}
         >

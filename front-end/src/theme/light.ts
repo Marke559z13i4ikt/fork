@@ -26,6 +26,7 @@ const antdLightTheme = {
   token: {
     ...commonToken,
     colorBgBase: '#fff',
+    colorHoverBg: '#eee',
     colorBgContainer: '#fff',
     colorBgElevated: '#F8F9FA',
     colorBorder: '#d3d3d4',

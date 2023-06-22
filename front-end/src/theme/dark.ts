@@ -26,6 +26,7 @@ const antDarkTheme = {
   token: {
     ...commonToken,
     colorBgBase: '#0a0b0c',
+    colorHoverBg: '#eee',
     colorBgContainer: '#0a0b0c',
     colorBgElevated: '#131418',
     colorBorder: '#36373a',

@@ -7,7 +7,7 @@ export interface IConnectionExtendInfoItem {
 }
 
 export interface IConnectionDetails {
-  id?: number;
+  id: number;
   alias: string;
   url: string;
   user: string;

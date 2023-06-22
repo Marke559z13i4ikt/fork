@@ -1,113 +1,154 @@
 import React, { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
-import classnames from 'classnames';
+import cs from 'classnames';
 import i18n from '@/i18n';
-
 import CreateConnection from '@/components/CreateConnection';
 import Iconfont from '@/components/Iconfont';
-
 import connectionService from '@/service/connection';
-import { DatabaseTypeCode, databaseMap } from '@/constants/database';
-import { databaseTypeList } from '@/constants/database';
+
+import { DatabaseTypeCode, databaseMap, databaseTypeList } from '@/constants/database';
+
 import { IDatabase } from '@/typings/database';
 import { IConnectionDetails } from '@/typings/connection';
-
-import type { MenuProps } from 'antd';
-import { Button, Menu, Dropdown } from 'antd';
+import { Button, Dropdown, Modal } from 'antd';
+import { MoreOutlined } from '@ant-design/icons';
 import styles from './index.less';
 
-type MenuItem = Required<MenuProps>['items'][number];
-
-function getItem(
-  label: React.ReactNode,
-  key: React.Key,
-  icon?: React.ReactNode,
-  children?: MenuItem[],
-  type?: 'group',
-): MenuItem {
-  return {
-    key,
-    icon,
-    children,
-    label,
-    type,
-  } as MenuItem;
+interface IMenu {
+  key: number;
+  label: string;
+  icon: React.ReactNode;
+  meta: IConnectionDetails;
 }
-
-interface IProps {
-}
+interface IProps {}
 
 export default memo<IProps>(function Connections(props) {
   const volatileRef = useRef<any>();
-  const [createConnectionType, setCreateConnectionType] = useState<DatabaseTypeCode>();
   const [connectionList, setConnectionList] = useState<IConnectionDetails[]>();
-  const [checkedConnection, setCheckedConnection] = useState();
+  const [curConnection, setCurConnection] = useState<Partial<IConnectionDetails>>({});
 
   useEffect(() => {
-    getDataSource();
-  }, [])
+    getConnectionList();
+  }, []);
 
-  function getDataSource() {
+  function getConnectionList() {
     let p = {
       pageNo: 1,
-      pageSize: 999
-    }
-    connectionService.getList(p).then(res => {
+      pageSize: 999,
+    };
+    connectionService.getList(p).then((res) => {
       setConnectionList(res.data);
-    })
+    });
   }
 
   function handleCreateConnections(database: IDatabase) {
-    setCreateConnectionType(database.code);
-    setCheckedConnection(undefined);
+    setCurConnection({
+      type: database.code,
+    });
   }
 
-  function changeMenu(e: any) {
-    setCheckedConnection(e.key);
-    setCreateConnectionType(undefined);
-  }
+  const menuItems: IMenu[] = useMemo(
+    () =>
+      (connectionList || []).map((t) => ({
+        key: t.id,
+        icon: <Iconfont className={styles.menuItemIcon} code={databaseMap[t.type].icon} />,
+        label: t.alias,
+        meta: t,
+      })),
+    [connectionList],
+  );
 
-  const menuItems: any = useMemo(() => connectionList?.map((t, i) => {
-    return getItem(t.alias, t.id!, <Iconfont className={styles.menuItemIcon} code={databaseMap[t.type].icon} />)
-  }), [connectionList]);
-
-  return <div className={classnames(styles.box)}>
-    <div ref={volatileRef} className={styles.layoutLeft}>
-      <div className={styles.pageTitle}>
-        {i18n('connection.title.connections')}
-      </div>
+  const renderMenu = () => {
+    return (
       <div className={styles.menuBox}>
-        <Menu
-          className={styles.menu}
-          mode="inline"
-          items={menuItems}
-          onClick={changeMenu}
-          selectedKeys={[checkedConnection!]}
-        />
+        {(menuItems || []).map((menu) => {
+          const { key, label, icon } = menu;
+          return (
+            <div
+              key={key}
+              className={styles.menuItems}
+              onClick={() => {
+                setCurConnection(menu.meta);
+              }}
+            >
+              <div
+                className={cs(styles.menuItemsTitle, {
+                  [styles.menuItemActive]: curConnection.id === key,
+                })}
+              >
+                {icon}
+                <span style={{ marginLeft: '8px' }}>{label}</span>
+              </div>
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'Delete',
+                      label: i18n('common.button.delete'),
+                      onClick: async ({ domEvent }) => {
+                        domEvent.preventDefault();
+                        await connectionService.remove({ id: key });
+                        // if (key === curConnection.id) {
+                        // }
+                        setCurConnection({});
+                        getConnectionList();
+                      },
+                    },
+                  ],
+                }}
+              >
+                <MoreOutlined />
+              </Dropdown>
+            </div>
+          );
+        })}
       </div>
-      {/* <Button
-        type="primary"
-        className={styles.addConnection}
-        onClick={() => { setCheckedConnection(undefined); setCreateConnectionType(undefined) }}
-      >
-        {i18n('connection.button.addConnection')}
-      </Button> */}
-    </div>
-    <div className={styles.layoutRight}>
-      {
-        (createConnectionType || checkedConnection) ?
-          <div className={classnames(styles.createConnections, { [styles.showCreateConnections]: (createConnectionType || checkedConnection) })}>
+    );
+  };
+
+  return (
+    <div className={styles.box}>
+      <div ref={volatileRef} className={styles.layoutLeft}>
+        <div className={styles.pageTitle}>{i18n('connection.title.connections')}</div>
+        {renderMenu()}
+        {/* <div className={styles.menuBox}>
+          <Menu
+            className={styles.menu}
+            mode="inline"
+            items={menuItems}
+            onClick={changeMenu}
+            selectedKeys={[checkedConnection!]}
+          ></Menu>
+        </div> */}
+        <Button
+          type="primary"
+          className={styles.addConnection}
+          onClick={() => {
+            setCurConnection({});
+          }}
+        >
+          {i18n('connection.button.addConnection')}
+        </Button>
+      </div>
+      <div className={styles.layoutRight}>
+        {curConnection && Object.keys(curConnection).length ? (
+          <div
+            className={cs(styles.createConnections, {
+              [styles.showCreateConnections]: Object.keys(curConnection).length,
+            })}
+          >
             <CreateConnection
-              createType={createConnectionType}
-              editId={checkedConnection}
-              closeCreateConnection={() => { setCreateConnectionType(undefined); setCheckedConnection(undefined); }}
-              submitCallback={getDataSource}
+              connectionData={curConnection}
+              closeCreateConnection={() => {
+                setCurConnection({});
+              }}
+              submitCallback={getConnectionList}
             />
           </div>
-          :
+        ) : (
           <div className={styles.dataBaseList}>
-            {
-              databaseTypeList.map(t => {
-                return <div key={t.code} className={styles.databaseItem} onClick={handleCreateConnections.bind(null, t)}>
+            {databaseTypeList.map((t) => {
+              return (
+                <div key={t.code} className={styles.databaseItem} onClick={handleCreateConnections.bind(null, t)}>
                   <div className={styles.databaseItemMain}>
                     <div className={styles.databaseItemLeft}>
                       <div className={styles.logoBox}>
@@ -120,13 +161,13 @@ export default memo<IProps>(function Connections(props) {
                     </div>
                   </div>
                 </div>
-              })
-            }
+              );
+            })}
             <div className={styles.databaseItemSpacer}></div>
             <div className={styles.databaseItemSpacer}></div>
           </div>
-      }
+        )}
+      </div>
     </div>
-  </div>
+  );
 });
-
