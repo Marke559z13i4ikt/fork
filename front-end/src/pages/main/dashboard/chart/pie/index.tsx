@@ -19,9 +19,9 @@ const PieChart = (props: IProps, ref: ForwardedRef<{ getEchartsInstance: Functio
         trigger: 'item',
       },
       legend: {
-        orient: 'vertical',
-        right: 'right',
-        top: 'center',
+        orient: 'horizontal',
+        // top: 'center',
+        align: 'auto'
       },
       // color:['#45C2E0', '#C1EBDD', '#FFC851','#5A5476','#1869A0','#FF9393'],
       series: [

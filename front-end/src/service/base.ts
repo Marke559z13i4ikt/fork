@@ -1,5 +1,6 @@
 import { extend, ResponseError } from 'umi-request';
 import { message } from 'antd';
+import { getLang } from '@/utils/localStorage';
 
 export type IErrorLevel = 'toast' | 'prompt' | 'critical' | false;
 export interface IOptions {
@@ -80,6 +81,7 @@ request.interceptors.request.use((url, options) => {
   if (localStorage.getItem('DBHUB')) {
     myOptions.headers.DBHUB = localStorage.getItem('DBHUB');
   }
+  myOptions.headers.lang = getLang() || 'en-us';
   return {
     options: myOptions,
   };

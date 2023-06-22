@@ -8,7 +8,7 @@ import { format } from 'sql-formatter';
 import sqlServer from '@/service/sql';
 import historyServer from '@/service/history';
 import MonacoEditor from 'react-monaco-editor';
-import { useReducerContext } from '@/pages/main/workspace/index'
+import { useReducerContext } from '@/pages/main/workspace/index';
 
 import styles from './index.less';
 import Loading from '../Loading/Loading';
@@ -43,7 +43,8 @@ interface IProps {
     consoleId: number;
     schemaName?: string;
     consoleName: string;
-  }
+  };
+  onExecuteSQL: (value: any) => void;
 }
 
 function Console(props: IProps) {
@@ -58,7 +59,7 @@ function Console(props: IProps) {
 
   useEffect(() => {
     setContext(value);
-  }, [value])
+  }, [value]);
 
   const onPressChatInput = (value: string) => {
     const params = formatParams({
@@ -108,17 +109,21 @@ function Console(props: IProps) {
       sql: sqlContent,
       ...executeParams,
     };
-    sqlServer.executeSql(p).then((res) => {
-      console.log(res)
-      let p = {
-        ...executeParams,
-        ddl: sqlContent
-      };
-      historyServer.createHistory(p);
-      // setManageResultDataList(res);
-    }).catch((error) => {
-      // setManageResultDataList([]);
-    });
+    sqlServer
+      .executeSql(p)
+      .then((res) => {
+        props.onExecuteSQL && props.onExecuteSQL(res);
+        // console.log(res)
+        let p = {
+          ...executeParams,
+          ddl: sqlContent,
+        };
+        historyServer.createHistory(p);
+        // setManageResultDataList(res);
+      })
+      .catch((error) => {
+        // setManageResultDataList([]);
+      });
   };
 
   const saveWindowTab = () => {

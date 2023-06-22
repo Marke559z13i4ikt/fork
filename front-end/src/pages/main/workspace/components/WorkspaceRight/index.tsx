@@ -10,6 +10,9 @@ import historyService from '@/service/history';
 import { Button, Tabs } from 'antd';
 import { useReducerContext } from '@/pages/main/workspace';
 import { workspaceActionType } from '@/pages/main/workspace/context';
+import SearchResult from '@/components/SearchResult';
+import LoadingContent from '@/components/Loading/LoadingContent';
+import { IManageResultData } from '@/typings/database';
 
 interface IProps {
   className?: string;
@@ -23,14 +26,15 @@ export default memo<IProps>(function WorkspaceRight(props) {
   const { state, dispatch } = useReducerContext();
   const { dblclickTreeNodeData, currentWorkspaceData } = state;
   const [consoleValue, setConsoleValue] = useState<string>();
+  const [resultData, setResultData] = useState<IManageResultData[]>([]);
 
   useEffect(() => {
     getConsoleList();
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (dblclickTreeNodeData) {
-      const { extraParams } = dblclickTreeNodeData
+      const { extraParams } = dblclickTreeNodeData;
       const { databaseName, schemaName, dataSourceId, dataSourceName, databaseType, tableName } = extraParams || {};
       let flag = false;
 
@@ -43,7 +47,7 @@ export default memo<IProps>(function WorkspaceRight(props) {
       });
 
       if (!flag) {
-        const name = [databaseName, schemaName, 'console'].filter(t => t).join('-');
+        const name = [databaseName, schemaName, 'console'].filter((t) => t).join('-');
         let p = {
           name: name,
           type: databaseType,
@@ -69,12 +73,11 @@ export default memo<IProps>(function WorkspaceRight(props) {
           };
           setActiveConsoleId(newConsole.id);
           setConsoleList([...(consoleList || []), newConsole]);
-          console.log([...(consoleList || []), newConsole])
+          console.log([...(consoleList || []), newConsole]);
         });
       }
-
     }
-  }, [dblclickTreeNodeData])
+  }, [dblclickTreeNodeData]);
 
   function getConsoleList() {
     let p = {
@@ -138,7 +141,7 @@ export default memo<IProps>(function WorkspaceRight(props) {
   }
 
   function onChange(key: string) {
-    setActiveConsoleId(+key)
+    setActiveConsoleId(+key);
   }
 
   const onEdit = (targetKey: any, action: 'add' | 'remove') => {
@@ -172,9 +175,9 @@ export default memo<IProps>(function WorkspaceRight(props) {
       tabOpened: 'n',
     };
 
-    const window = consoleList?.find(t => t.id === +targetKey);
+    const window = consoleList?.find((t) => t.id === +targetKey);
     if (!window?.status) {
-      return
+      return;
     }
     if (window!.status === 'DRAFT') {
       historyService.deleteWindowTab({ id: window!.id });
@@ -183,48 +186,54 @@ export default memo<IProps>(function WorkspaceRight(props) {
     }
   };
 
-  return <div className={classnames(styles.box, className)}>
-    <div className={styles.tab_box}>
-      <Tabs
-        hideAdd
-        onChange={onChange}
-        onEdit={onEdit}
-        type="editable-card"
-        items={consoleList?.map((t, i) => {
-          return {
-            label: t.name,
-            key: t.id + '',
-          };
-        })}
-      />
-    </div>
-    {
-      consoleList?.map((t, index) => {
-        return <div className={classnames(styles.console_box, { [styles.active_console_box]: activeConsoleId === t.id })}>
-          <DraggableContainer layout="column" className={styles.box_right_center}>
-            <div ref={draggableRef} className={styles.box_right_console}>
-              <Console
-                executeParams={
-                  {
+  return (
+    <div className={classnames(styles.box, className)}>
+      <div className={styles.tabBox}>
+        <Tabs
+          hideAdd
+          onChange={onChange}
+          onEdit={onEdit}
+          type="editable-card"
+          items={consoleList?.map((t, i) => {
+            return {
+              label: t.name,
+              key: t.id + '',
+            };
+          })}
+        />
+      </div>
+      {consoleList?.map((t, index) => {
+        return (
+          <div className={classnames(styles.consoleBox, { [styles.activeConsoleBox]: activeConsoleId === t.id })}>
+            <DraggableContainer layout="column" className={styles.boxRightCenter}>
+              <div ref={draggableRef} className={styles.boxRightConsole}>
+                <Console
+                  executeParams={{
                     databaseName: currentWorkspaceData.databaseName,
                     dataSourceId: currentWorkspaceData.dataSourceId,
                     type: currentWorkspaceData.databaseType,
                     schemaName: currentWorkspaceData?.schemaName,
                     consoleId: t.id,
                     consoleName: t.name,
-                  }
-                }
-                hasAiChat={true}
-                hasAi2Lang={true}
-                value={consoleValue}
-              />
-            </div>
-            <div className={styles.box_right_result}>
-              <p>{t.databaseName}</p>
-            </div>
-          </DraggableContainer>
-        </div>
-      })
-    }
-  </div>
-})
+                  }}
+                  hasAiChat={true}
+                  hasAi2Lang={true}
+                  value={consoleValue}
+                  onExecuteSQL={(result) => {
+                    console.log('onExecuteSQL', result);
+                    setResultData(result);
+                  }}
+                />
+              </div>
+              <div className={styles.boxRightResult}>
+                <LoadingContent data={resultData} handleEmpty>
+                  <SearchResult manageResultDataList={resultData} />
+                </LoadingContent>
+              </div>
+            </DraggableContainer>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
